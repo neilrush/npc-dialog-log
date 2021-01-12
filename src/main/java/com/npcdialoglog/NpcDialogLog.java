@@ -32,7 +32,7 @@ public class NpcDialogLog extends Plugin
 	{
 		if (actor != null)
 		{
-				checkWidgetDialogs();
+			checkWidgetDialogs();
 		}
 	}
 
@@ -42,9 +42,6 @@ public class NpcDialogLog extends Plugin
 		if (event.getTarget() == null || event.getSource() != client.getLocalPlayer())
 		{
 			return;
-		}
-		if(event.getSource() != actor && actor != null){
-			actor.setOverheadText(null);
 		}
 		lastNPCText = "";
 		lastPlayerText = "";
@@ -60,7 +57,7 @@ public class NpcDialogLog extends Plugin
 		if (npcDialogText != null && !lastNPCText.equals(npcDialogText))
 		{
 			lastNPCText = npcDialogText;
-			client.addChatMessage(ChatMessageType.PUBLICCHAT,actor.getName(), npcDialogText, actor.getName());
+			client.addChatMessage(ChatMessageType.PUBLICCHAT, actor.getName(), npcDialogText, actor.getName());
 		}
 
 		//For when your player has dialogue
@@ -69,10 +66,11 @@ public class NpcDialogLog extends Plugin
 			lastPlayerText = playerDialogText;
 			if (client.getLocalPlayer() != null)
 			{
-				client.addChatMessage(ChatMessageType.PUBLICCHAT,client.getLocalPlayer().getName(), playerDialogText, client.getLocalPlayer().getName());
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, client.getLocalPlayer().getName(), playerDialogText, client.getLocalPlayer().getName());
 			}
 		}
 	}
+
 	private String getWidgetTextSafely(final WidgetInfo info)
 	{
 		return getWidgetTextSafely(info.getGroupId(), info.getChildId());
