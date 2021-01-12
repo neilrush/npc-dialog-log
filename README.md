@@ -1,5 +1,5 @@
 # NPC Dialog Log
-![GitHub release (latest)](https://img.shields.io/github/v/release/neilrush/npc-dialog-log)
+
 
 This runlite plugin adds dialog between the player and NPCs to the chat as public chat.
 Great for the player that holds spacebar during quests and needs to go back to see what to do.
