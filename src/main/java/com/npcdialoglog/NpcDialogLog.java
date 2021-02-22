@@ -57,7 +57,10 @@ public class NpcDialogLog extends Plugin
 		if (npcDialogText != null && !lastNPCText.equals(npcDialogText))
 		{
 			lastNPCText = npcDialogText;
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, actor.getName(), npcDialogText, actor.getName());
+			if (actor.getName() != null)
+			{
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, actor.getName(), npcDialogText, actor.getName());
+			}
 		}
 
 		//For when your player has dialogue
