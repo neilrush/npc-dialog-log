@@ -50,7 +50,7 @@ public class NpcDialogLog extends Plugin
 
 	private void checkWidgetDialogs()
 	{
-		final String npcDialogText = getWidgetTextSafely(WidgetInfo.DIALOG_NPC_TEXT);
+		final String npcDialogText = getWidgetTextSafely();
 		final String playerDialogText = getWidgetTextSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, 4);
 
 		// For when the NPC has dialog
@@ -74,9 +74,9 @@ public class NpcDialogLog extends Plugin
 		}
 	}
 
-	private String getWidgetTextSafely(final WidgetInfo info)
+	private String getWidgetTextSafely()
 	{
-		return getWidgetTextSafely(info.getGroupId(), info.getChildId());
+		return getWidgetTextSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
 	}
 
 	private String getWidgetTextSafely(final int group, final int child)
