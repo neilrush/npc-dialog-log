@@ -51,7 +51,7 @@ public class NpcDialogLog extends Plugin
 	private void checkWidgetDialogs()
 	{
 		final String npcDialogText = getWidgetTextSafely();
-		final String playerDialogText = getWidgetTextSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, 4);
+		final String playerDialogText = getWidgetTextSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc text child id as they seem to be the same
 
 		// For when the NPC has dialog
 		if (npcDialogText != null && !lastNPCText.equals(npcDialogText))
