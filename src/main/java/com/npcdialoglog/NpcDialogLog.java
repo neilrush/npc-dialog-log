@@ -1,6 +1,7 @@
 package com.npcdialoglog;
 
 import javax.inject.Inject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
@@ -24,8 +25,8 @@ public class NpcDialogLog extends Plugin
 	private Client client;
 
 	private Actor actor = null;
-	private String lastNPCText = "";
-	private String lastPlayerText = "";
+	private Dialog lastNPCDialogue = null;
+	private Dialog lastPlayerDialogue = null;
 
 	@Subscribe
 	public void onGameTick(GameTick event)
@@ -43,44 +44,61 @@ public class NpcDialogLog extends Plugin
 		{
 			return;
 		}
-		lastNPCText = "";
-		lastPlayerText = "";
+		lastNPCDialogue = null;
+		lastPlayerDialogue = null;
 		actor = event.getTarget();
 	}
 
 	private void checkWidgetDialogs()
 	{
-		final String npcDialogText = getWidgetTextSafely();
-		final String playerDialogText = getWidgetTextSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc text child id as they seem to be the same
+		final Dialog npcDialog = getWidgetDialogueSafely();
+		final Dialog playerDialog = getWidgetDialogueSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
 
 		// For when the NPC has dialog
-		if (npcDialogText != null && !lastNPCText.equals(npcDialogText))
+		if (npcDialog.text != null && (lastNPCDialogue == null || !lastNPCDialogue.text.equals(npcDialog.text)))
 		{
-			lastNPCText = npcDialogText;
-			if (actor.getName() != null)
+			lastNPCDialogue = npcDialog;
+			if (npcDialog.name != null)
 			{
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, actor.getName(), npcDialogText, actor.getName());
+				lastPlayerDialogue = null; //npc has dialog box now so safe to reset player dialog
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, npcDialog.name, npcDialog.text, npcDialog.name);
 			}
 		}
 
 		//For when your player has dialogue
-		if (playerDialogText != null && !lastPlayerText.equals(playerDialogText))
+		if (playerDialog.text != null && (lastPlayerDialogue == null || !lastPlayerDialogue.text.equals(playerDialog.text)))
 		{
-			lastPlayerText = playerDialogText;
-			if (client.getLocalPlayer() != null)
+			lastPlayerDialogue = playerDialog;
+			if (playerDialog.name != null)
 			{
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, client.getLocalPlayer().getName(), playerDialogText, client.getLocalPlayer().getName());
+				lastNPCDialogue = null; //player has dialog box now so safe reset npc dialog
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, playerDialog.name, playerDialog.text, playerDialog.name);
 			}
 		}
 	}
 
-	private String getWidgetTextSafely()
+	private Dialog getWidgetDialogueSafely()
 	{
-		return getWidgetTextSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
+		return getWidgetDialogueSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
 	}
 
-	private String getWidgetTextSafely(final int group, final int child)
+	private Dialog getWidgetDialogueSafely(final int group, final int nameChild, final int textChild)
 	{
-		return client.getWidget(group, child) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, child).getText());
+		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()), client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
+	}
+
+	protected static class Dialog
+	{
+		@Getter
+		private final String name;
+		@Getter
+		private final String text;
+
+
+		public Dialog(String name, String text)
+		{
+			this.name = name;
+			this.text = text;
+		}
 	}
 }
