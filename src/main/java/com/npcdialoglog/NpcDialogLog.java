@@ -90,10 +90,10 @@ public class NpcDialogLog extends Plugin
 
 	private void addDialogMessage(String name, String message)
 	{
-		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		//boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
 
-		Color nameColor = isChatboxTransparent ? chatColorConfig.transparentPlayerUsername() : chatColorConfig.opaquePlayerUsername();
-		Color messageColor = isChatboxTransparent ? chatColorConfig.transparentPublicChat() : chatColorConfig.opaquePublicChat();
+		//Color nameColor = isChatboxTransparent ? chatColorConfig.transparentPlayerUsername() : chatColorConfig.opaquePlayerUsername();
+		//Color messageColor = isChatboxTransparent ? chatColorConfig.transparentPublicChat() : chatColorConfig.opaquePublicChat();
 
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
 			.append(message);
