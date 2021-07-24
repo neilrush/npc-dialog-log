@@ -26,23 +26,19 @@ import net.runelite.client.util.Text;
 @Slf4j
 @PluginDescriptor(
 	name = "Npc Dialog Log",
-	description= "Adds dialog between the player and NPCs to the chat as public chat.",
+	description = "Adds dialog between the player and NPCs to the chat as public chat.",
 	tags = {"chat, quest, npc"}
 )
 public class NpcDialogLog extends Plugin
 {
 	@Inject
+	NpcDialogLogConfig npcDialogLogConfig;
+	@Inject
 	private Client client;
-
 	@Inject
 	private ChatMessageManager chatMessageManager;
-
 	@Inject
 	private ChatColorConfig chatColorConfig;
-
-	@Inject
-	NpcDialogLogConfig npcDialogLogConfig;
-
 	/**
 	 * The actor that started dialog
 	 */
@@ -91,7 +87,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private void checkWidgetDialogs()
 	{
-		if(npcDialogLogConfig.displayNpcDialog())
+		if (npcDialogLogConfig.displayNpcDialog())
 		{
 			final Dialog npcDialog = getWidgetDialogSafely();
 
@@ -107,7 +103,7 @@ public class NpcDialogLog extends Plugin
 			}
 		}
 
-		if(npcDialogLogConfig.displayPlayerDialog())
+		if (npcDialogLogConfig.displayPlayerDialog())
 		{
 			final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
 
@@ -126,7 +122,8 @@ public class NpcDialogLog extends Plugin
 
 	/**
 	 * Adds NPC/Player dialogue to chat as game message using the set public chat colors
-	 * @param name the name of the NPC/Player
+	 *
+	 * @param name    the name of the NPC/Player
 	 * @param message the message to add to chat
 	 */
 	private void addDialogMessage(String name, String message)
@@ -147,6 +144,7 @@ public class NpcDialogLog extends Plugin
 	 * Gets the color for usernames in public chat from chatColorConfig or default from {@code JagexColors}.
 	 * <p>
 	 * Takes the chatbox mode (opaque/transparent) into account.
+	 *
 	 * @return the current color of usernames in public chat
 	 */
 	private Color getPublicChatUsernameColor()
@@ -154,11 +152,11 @@ public class NpcDialogLog extends Plugin
 		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
 		Color usernameColor;
 
-		if(isChatboxTransparent)
+		if (isChatboxTransparent)
 		{
 			usernameColor = Color.WHITE; //default - is missing from JagexColors
 
-			if(chatColorConfig.transparentPlayerUsername() != null)
+			if (chatColorConfig.transparentPlayerUsername() != null)
 			{
 				usernameColor = chatColorConfig.transparentPlayerUsername();
 			}
@@ -167,7 +165,7 @@ public class NpcDialogLog extends Plugin
 		{
 			usernameColor = Color.BLACK; //default - is missing from JagexColors
 
-			if(chatColorConfig.opaquePlayerUsername() != null)
+			if (chatColorConfig.opaquePlayerUsername() != null)
 			{
 				usernameColor = chatColorConfig.opaquePlayerUsername();
 			}
@@ -179,6 +177,7 @@ public class NpcDialogLog extends Plugin
 	 * Gets the color for messages in public chat from chatColorConfig or default from {@code JagexColors}.
 	 * <p>
 	 * Takes the chatbox mode (opaque/transparent) into account.
+	 *
 	 * @return the current color of messages in public chat
 	 */
 	private Color getPublicChatMessageColor()
@@ -187,11 +186,11 @@ public class NpcDialogLog extends Plugin
 		Color messageColor;
 
 
-		if(isChatboxTransparent)
+		if (isChatboxTransparent)
 		{
 			messageColor = JagexColors.CHAT_PUBLIC_TEXT_TRANSPARENT_BACKGROUND;//default
 
-			if(chatColorConfig.transparentPublicChat() != null)
+			if (chatColorConfig.transparentPublicChat() != null)
 			{
 				messageColor = chatColorConfig.transparentPublicChat();
 			}
@@ -201,7 +200,7 @@ public class NpcDialogLog extends Plugin
 
 			messageColor = JagexColors.CHAT_PUBLIC_TEXT_OPAQUE_BACKGROUND;//default
 
-			if(chatColorConfig.opaquePublicChat() != null)
+			if (chatColorConfig.opaquePublicChat() != null)
 			{
 				messageColor = chatColorConfig.opaquePublicChat();
 			}
@@ -211,6 +210,7 @@ public class NpcDialogLog extends Plugin
 
 	/**
 	 * Gets sanitized dialog from npc dialog widget
+	 *
 	 * @return The NPC dialog
 	 */
 	private Dialog getWidgetDialogSafely()
@@ -220,7 +220,8 @@ public class NpcDialogLog extends Plugin
 
 	/**
 	 * Gets sanitized dialog from a dialog widget
-	 * @param group	The group id for the dialog widget
+	 *
+	 * @param group     The group id for the dialog widget
 	 * @param nameChild The child id of the name in the dialog widget
 	 * @param textChild The child id of the text/message in the dialog widget
 	 * @return The sanitized dialog from the dialog widget
