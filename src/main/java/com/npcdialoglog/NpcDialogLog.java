@@ -24,7 +24,9 @@ import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Npc Dialog Log"
+	name = "Npc Dialog Log",
+	description= "Adds dialog between the player and NPCs to the chat as public chat.",
+	tags = {"chat, quest, npc"}
 )
 public class NpcDialogLog extends Plugin
 {
@@ -40,10 +42,24 @@ public class NpcDialogLog extends Plugin
 	@Inject
 	NpcDialogLogConfig npcDialogLogConfig;
 
+	/**
+	 * The actor that started dialog
+	 */
 	private Actor actor = null;
+
+	/**
+	 * The last dialog from the NPC
+	 */
 	private Dialog lastNpcDialog = null;
+
+	/**
+	 * The last dialog from the player
+	 */
 	private Dialog lastPlayerDialog = null;
 
+	/**
+	 * check for dialog every game tick
+	 */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
@@ -53,6 +69,9 @@ public class NpcDialogLog extends Plugin
 		}
 	}
 
+	/**
+	 * Checks if the player has entered dialog with an npc
+	 */
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged event)
 	{
@@ -65,6 +84,10 @@ public class NpcDialogLog extends Plugin
 		actor = event.getTarget();
 	}
 
+	/**
+	 * Checks for the dialog widget and adds a message to chat if the dialog
+	 * is from the player or an npc
+	 */
 	private void checkWidgetDialogs()
 	{
 		if(npcDialogLogConfig.displayNpcDialog())
@@ -100,6 +123,11 @@ public class NpcDialogLog extends Plugin
 		}
 	}
 
+	/**
+	 * Adds NPC/Player dialogue to chat as game message using the set public chat colors
+	 * @param name the name of the NPC/Player
+	 * @param message the message to add to chat
+	 */
 	private void addDialogMessage(String name, String message)
 	{
 		//boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
@@ -117,11 +145,22 @@ public class NpcDialogLog extends Plugin
 			.build());
 	}
 
+	/**
+	 * Gets sanitized dialog from npc dialog widget
+	 * @return The NPC dialog
+	 */
 	private Dialog getWidgetDialogSafely()
 	{
 		return getWidgetDialogSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
 	}
 
+	/**
+	 * Gets sanitized dialog from a dialog widget
+	 * @param group	The group id for the dialog widget
+	 * @param nameChild The child id of the name in the dialog widget
+	 * @param textChild The child id of the text/message in the dialog widget
+	 * @return The sanitized dialog from the dialog widget
+	 */
 	private Dialog getWidgetDialogSafely(final int group, final int nameChild, final int textChild)
 	{
 		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()), client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
