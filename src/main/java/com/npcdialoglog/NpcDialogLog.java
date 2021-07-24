@@ -1,5 +1,6 @@
 package com.npcdialoglog;
 
+import com.google.inject.Provides;
 import java.awt.Color;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ChatColorConfig;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -30,10 +32,13 @@ public class NpcDialogLog extends Plugin
 	private Client client;
 
 	@Inject
+	private ChatMessageManager chatMessageManager;
+
+	@Inject
 	private ChatColorConfig chatColorConfig;
 
 	@Inject
-	private ChatMessageManager chatMessageManager;
+	NpcDialogLogConfig npcDialogLogConfig;
 
 	private Actor actor = null;
 	private Dialog lastNpcDialog = null;
@@ -62,28 +67,35 @@ public class NpcDialogLog extends Plugin
 
 	private void checkWidgetDialogs()
 	{
-		final Dialog npcDialog = getWidgetDialogSafely();
-		final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
-
-		// For when the NPC has dialog
-		if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))
+		if(npcDialogLogConfig.displayNpcDialog())
 		{
-			lastNpcDialog = npcDialog;
-			if (npcDialog.getName() != null)
+			final Dialog npcDialog = getWidgetDialogSafely();
+
+			// Check if the NPC has dialog
+			if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))//check if this is a valid dialog box and it is not a duplicate
 			{
-				lastPlayerDialog = null; //npc has dialog box now so safe to reset player dialog
-				addDialogMessage(npcDialog.getName(), npcDialog.getText());
+				lastNpcDialog = npcDialog;
+				if (npcDialog.getName() != null)
+				{
+					lastPlayerDialog = null; //npc has dialog box now so safe to reset player dialog
+					addDialogMessage(npcDialog.getName(), npcDialog.getText());
+				}
 			}
 		}
 
-		//For when your player has dialog
-		if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))
+		if(npcDialogLogConfig.displayPlayerDialog())
 		{
-			lastPlayerDialog = playerDialog;
-			if (playerDialog.getName() != null)
+			final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
+
+			// Check if the player has dialog
+			if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))//check if this is a valid dialog box and it is not a duplicate
 			{
-				lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
-				addDialogMessage(playerDialog.getName(), playerDialog.getText());
+				lastPlayerDialog = playerDialog;
+				if (playerDialog.getName() != null)
+				{
+					lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
+					addDialogMessage(playerDialog.getName(), playerDialog.getText());
+				}
 			}
 		}
 	}
@@ -113,5 +125,11 @@ public class NpcDialogLog extends Plugin
 	private Dialog getWidgetDialogSafely(final int group, final int nameChild, final int textChild)
 	{
 		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()), client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
+	}
+
+	@Provides
+	NpcDialogLogConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(NpcDialogLogConfig.class);
 	}
 }
