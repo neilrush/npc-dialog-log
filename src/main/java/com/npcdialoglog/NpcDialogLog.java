@@ -20,6 +20,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.JagexColors;
 import net.runelite.client.util.Text;
 
 @Slf4j
@@ -130,19 +131,82 @@ public class NpcDialogLog extends Plugin
 	 */
 	private void addDialogMessage(String name, String message)
 	{
-		//boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
-
-		//Color nameColor = isChatboxTransparent ? chatColorConfig.transparentPlayerUsername() : chatColorConfig.opaquePlayerUsername();
-		//Color messageColor = isChatboxTransparent ? chatColorConfig.transparentPublicChat() : chatColorConfig.opaquePublicChat();
 
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
-			.append(message);
+			.append(getPublicChatUsernameColor(), name)
+			.append(getPublicChatUsernameColor(), ": ")
+			.append(getPublicChatMessageColor(), message);
 
 		chatMessageManager.queue(QueuedMessage.builder()
-			.type(ChatMessageType.PUBLICCHAT)
-			.name(name)
+			.type(ChatMessageType.GAMEMESSAGE)
 			.runeLiteFormattedMessage(chatMessage.build())
 			.build());
+	}
+
+	/**
+	 * Gets the color for usernames in public chat from chatColorConfig or default from {@code JagexColors}.
+	 * <p>
+	 * Takes the chatbox mode (opaque/transparent) into account.
+	 * @return the current color of usernames in public chat
+	 */
+	private Color getPublicChatUsernameColor()
+	{
+		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		Color usernameColor;
+
+		if(isChatboxTransparent)
+		{
+			usernameColor = Color.WHITE; //default - is missing from JagexColors
+
+			if(chatColorConfig.transparentPlayerUsername() != null)
+			{
+				usernameColor = chatColorConfig.transparentPlayerUsername();
+			}
+		}
+		else
+		{
+			usernameColor = Color.BLACK; //default - is missing from JagexColors
+
+			if(chatColorConfig.opaquePlayerUsername() != null)
+			{
+				usernameColor = chatColorConfig.opaquePlayerUsername();
+			}
+		}
+		return usernameColor;
+	}
+
+	/**
+	 * Gets the color for messages in public chat from chatColorConfig or default from {@code JagexColors}.
+	 * <p>
+	 * Takes the chatbox mode (opaque/transparent) into account.
+	 * @return the current color of messages in public chat
+	 */
+	private Color getPublicChatMessageColor()
+	{
+		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		Color messageColor;
+
+
+		if(isChatboxTransparent)
+		{
+			messageColor = JagexColors.CHAT_PUBLIC_TEXT_TRANSPARENT_BACKGROUND;//default
+
+			if(chatColorConfig.transparentPublicChat() != null)
+			{
+				messageColor = chatColorConfig.transparentPublicChat();
+			}
+		}
+		else
+		{
+
+			messageColor = JagexColors.CHAT_PUBLIC_TEXT_OPAQUE_BACKGROUND;//default
+
+			if(chatColorConfig.opaquePublicChat() != null)
+			{
+				messageColor = chatColorConfig.opaquePublicChat();
+			}
+		}
+		return messageColor;
 	}
 
 	/**
