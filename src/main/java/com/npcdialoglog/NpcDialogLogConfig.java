@@ -3,15 +3,33 @@ package com.npcdialoglog;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("npcDialogLog")
 public interface NpcDialogLogConfig extends Config
 {
+	@ConfigSection(
+		name = "Chat Dialog",
+		description = "All options that enable chat dialog logging",
+		position = 0,
+		closedByDefault = false
+	)
+	String chatDialogSection = "chatDialog";
+
+	@ConfigSection(
+		name = "Overhead Text",
+		description = "All options that enable overhead text dialog",
+		position = 1,
+		closedByDefault = false
+	)
+	String overheadTextSection = "overheadText";
+
 	@ConfigItem(
 		keyName = "displayPlayerDialog",
 		name = "Player Dialog",
 		description = "Add player dialog to chat",
-		position = 1
+		section  =  chatDialogSection,
+		position = 0
 	)
 	default boolean displayPlayerDialog()
 	{
@@ -22,7 +40,9 @@ public interface NpcDialogLogConfig extends Config
 		keyName = "displayNpcDialog",
 		name = "NPC Dialog",
 		description = "Add NPC dialog to chat",
-		position = 2
+		section  =  chatDialogSection,
+		position = 1
+
 	)
 	default boolean displayNpcDialog()
 	{
@@ -33,7 +53,8 @@ public interface NpcDialogLogConfig extends Config
 		keyName = "displayPlayerOverheadText",
 		name = "Player Overhead Text",
 		description = "Add dialog over the head of the player",
-		position = 3
+		section  =  overheadTextSection,
+		position = 0
 	)
 
 	default boolean displayPlayerOverheadText()
@@ -45,7 +66,8 @@ public interface NpcDialogLogConfig extends Config
 		keyName = "displayNpcOverheadText",
 		name = "NPC Overhead Text",
 		description = "Add dialog over the head of npcs",
-		position = 4
+		section  =  overheadTextSection,
+		position = 1
 	)
 
 	default boolean displayNpcOverheadText()
