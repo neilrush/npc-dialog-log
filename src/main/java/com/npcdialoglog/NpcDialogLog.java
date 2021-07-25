@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.NPC;
 import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
@@ -97,7 +98,10 @@ public class NpcDialogLog extends Plugin
 		{
 			if (client.getLocalPlayer().getOverheadText() != null)
 			{
-				lastMessageTickTime.remove(client.getLocalPlayer());
+				if(lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+				{
+					log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
+				}
 			}
 		}
 	}
@@ -143,6 +147,8 @@ public class NpcDialogLog extends Plugin
 					if (npcDialogLogConfig.displayNpcDialog())
 					{
 						addDialogMessage(npcDialog.getName(), npcDialog.getText());
+
+						log.debug("Added chat dialog: " + npcDialog.getName() + ": " + npcDialog.getText());
 					}
 				}
 			}
@@ -162,12 +168,16 @@ public class NpcDialogLog extends Plugin
 					{
 						lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
 						client.getLocalPlayer().setOverheadText(playerDialog.getText());
+
+						log.debug("Set overhead dialog for player to: " + playerDialog.getText());
 					}
 
 					lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
 					if(npcDialogLogConfig.displayPlayerDialog())
 					{
 						addDialogMessage(playerDialog.getName(), playerDialog.getText());
+
+						log.debug("Added chat dialog: " + playerDialog.getName() + ": " + playerDialog.getText());
 					}
 				}
 			}
@@ -191,11 +201,11 @@ public class NpcDialogLog extends Plugin
 				.findFirst()
 				.orElse(null);*/
 
-			Actor foundActor = null;
+			NPC foundActor = null;
 			//look for npc that matches the name in the dialog
 			client.getCachedNPCs();
 			client.getNpcs();
-			for (Actor npc : client.getNpcs())
+			for (NPC npc : client.getNpcs())
 			{
 				if (npc.getName() != null && Text.sanitizeMultilineText(npc.getName()).equals(npcDialog.getName()))
 				{
@@ -207,17 +217,25 @@ public class NpcDialogLog extends Plugin
 			{
 				lastMessageTickTime.put(foundActor, client.getTickCount());
 				foundActor.setOverheadText(npcDialog.getText());
+
+				log.debug("Found matching actor: " + foundActor.getName() + " " +foundActor.getId());
+				log.debug("Set overhead dialog for Npc: " + foundActor.getName() + " to: " + npcDialog.getText());
 			}
 			else
 			{
 				lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
 				actorInteractedWith.setOverheadText(npcDialog.getText()); //fallback on setting overhead text on interaction npc
+
+				log.debug("Unable to find matching actor. Fallback to using interaction npc: " + actorInteractedWith.getName());
+				log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
 			}
 		}
 		else
 		{
 			lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
 			actorInteractedWith.setOverheadText(npcDialog.getText());
+
+			log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
 		}
 	}
 
