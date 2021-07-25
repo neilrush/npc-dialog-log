@@ -28,4 +28,28 @@ public interface NpcDialogLogConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "displayPlayerOverheadText",
+		name = "Player Overhead Text",
+		description = "Add dialog over the head of the player",
+		position = 3
+	)
+
+	default boolean displayPlayerOverheadText()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "displayNpcOverheadText",
+		name = "NPC Overhead Text",
+		description = "Add dialog over the head of npcs",
+		position = 4
+	)
+
+	default boolean displayNpcOverheadText()
+	{
+		return false;
+	}
 }
