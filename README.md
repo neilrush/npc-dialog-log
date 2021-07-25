@@ -1,9 +1,18 @@
-# NPC Dialog Log
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/neilrush/npc-dialog-log?include_prereleases)
+# NPC Dialog Log <p>![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/neilrush/npc-dialog-log?include_prereleases&logo=github) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/neilrush/npc-dialog-log/Java%20CI%20with%20Gradle/master?logo=github)
 
-This runlite plugin adds dialog between the player and NPCs to the chat as public chat.
+This RuneLite plugin adds dialog between the player and NPCs to the chat as public chat.
 Great for the player that holds spacebar during quests and needs to go back to see what to do.
+This plugin also adds the option to display dialog overhead for immersion 🙂.
 
-![NPCDialog-Demo](https://user-images.githubusercontent.com/31221793/104380039-02281e80-54f0-11eb-8f5c-8b7bfe3aa165.gif)
-## Credit
-Code to safely read from the dialogue widget is adapted from [Stevester118's](https://github.com/Stevester118) plugin, [NPC Overhead Dialogue](https://github.com/Stevester118/NPC-Overhead-Dialogue).
+![.](https://i.imgur.com/sDbYp9N.gif)
+
+##Configuration
+
+![.](https://i.imgur.com/lo1IcYz.png)
+
+| Option               | Description                                  |
+|----------------------|----------------------------------------------|
+| Player Dialog        | Adds dialog said by the player to the chat.  |
+| NPC Dialog           | Adds dialog said by Npcs to the chat.        |
+| Player Overhead Text | Displays dialog said by the player overhead. |
+| NPC Overhead Text    | Displays dialog said by Npcs overhead.       |
