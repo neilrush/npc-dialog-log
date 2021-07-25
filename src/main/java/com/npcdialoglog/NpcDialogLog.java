@@ -121,7 +121,7 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
-	 * Adds NPC/Player dialogue to chat as game message using the set public chat colors
+	 * Adds NPC/Player dialogue to chat as a Console message using the set public chat colors
 	 *
 	 * @param name    the name of the NPC/Player
 	 * @param message the message to add to chat
@@ -135,7 +135,7 @@ public class NpcDialogLog extends Plugin
 			.append(getPublicChatMessageColor(), message);
 
 		chatMessageManager.queue(QueuedMessage.builder()
-			.type(ChatMessageType.GAMEMESSAGE)
+			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(chatMessage.build())
 			.build());
 	}
