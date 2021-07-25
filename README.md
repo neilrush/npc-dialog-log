@@ -6,7 +6,7 @@ This plugin also adds the option to display dialog overhead for immersion 🙂.
 
 ![.](https://i.imgur.com/sDbYp9N.gif)
 
-##Configuration
+## Configuration
 
 ![.](https://i.imgur.com/lo1IcYz.png)
 
