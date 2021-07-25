@@ -355,4 +355,14 @@ public class NpcDialogLog extends Plugin
 	{
 		return configManager.getConfig(NpcDialogLogConfig.class);
 	}
+
+	@Override
+	protected void shutDown()
+	{
+		//clear all overhead text
+		for ( Actor actor : lastMessageTickTime.keySet())
+		{
+			actor.setOverheadText(null);
+		}
+	}
 }
