@@ -40,26 +40,34 @@ public class NpcDialogLog extends Plugin
 	 * The number of ticks overhead text should last for.
 	 */
 	private final int TIMEOUT_TICKS = 5;
+	
 	/**
 	 * The map of the last time an actor had overhead text set
 	 */
 	private final Map<Actor, Integer> lastMessageTickTime = new HashMap<>();
+	
 	@Inject
 	NpcDialogLogConfig npcDialogLogConfig;
+	
 	@Inject
 	private Client client;
+	
 	@Inject
 	private ChatMessageManager chatMessageManager;
+	
 	@Inject
 	private ChatColorConfig chatColorConfig;
+	
 	/**
 	 * The actor that started dialog
 	 */
 	private Actor actorInteractedWith = null;
+	
 	/**
 	 * The last dialog from the NPC
 	 */
 	private Dialog lastNpcDialog = null;
+	
 	/**
 	 * The last dialog from the player
 	 */
@@ -196,15 +204,8 @@ public class NpcDialogLog extends Plugin
 		if (actorInteractedWith.getName() == null || !actorInteractedWith.getName().equals(npcDialog.getName()))
 		{
 
-/*			Actor foundActor = Arrays.stream(client.getCachedNPCs())
-				.filter(cachedNpc -> Text.sanitizeMultilineText(cachedNpc.getName()).equals(npcDialog.getName()))
-				.findFirst()
-				.orElse(null);*/
-
 			NPC foundActor = null;
 			//look for npc that matches the name in the dialog
-			client.getCachedNPCs();
-			client.getNpcs();
 			for (NPC npc : client.getNpcs())
 			{
 				if (npc.getName() != null && Text.sanitizeMultilineText(npc.getName()).equals(npcDialog.getName()))
