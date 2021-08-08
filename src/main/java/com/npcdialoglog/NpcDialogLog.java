@@ -103,9 +103,15 @@ public class NpcDialogLog extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		if(gameStateChanged.getGameState() != GameState.LOGGED_IN)
+		switch (gameStateChanged.getGameState())
 		{
-			lastMessageTickTime.clear();
+			case CONNECTION_LOST:
+			case HOPPING:
+			case LOGIN_SCREEN:
+				lastMessageTickTime.clear();
+				break;
+			default:
+				break;
 		}
 	}
 
