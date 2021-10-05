@@ -42,34 +42,34 @@ public class NpcDialogLog extends Plugin
 	 * The number of ticks overhead text should last for.
 	 */
 	private final int TIMEOUT_TICKS = 5;
-	
+
 	/**
 	 * The map of the last time an actor had overhead text set
 	 */
 	private final Map<Actor, Integer> lastMessageTickTime = new HashMap<>();
-	
+
 	@Inject
 	NpcDialogLogConfig npcDialogLogConfig;
-	
+
 	@Inject
 	private Client client;
-	
+
 	@Inject
 	private ChatMessageManager chatMessageManager;
-	
+
 	@Inject
 	private ChatColorConfig chatColorConfig;
-	
+
 	/**
 	 * The actor that started dialog
 	 */
 	private Actor actorInteractedWith = null;
-	
+
 	/**
 	 * The last dialog from the NPC
 	 */
 	private Dialog lastNpcDialog = null;
-	
+
 	/**
 	 * The last dialog from the player
 	 */
@@ -126,7 +126,7 @@ public class NpcDialogLog extends Plugin
 		{
 			if (client.getLocalPlayer().getOverheadText() != null)
 			{
-				if(lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+				if (lastMessageTickTime.remove(client.getLocalPlayer()) != null)
 				{
 					log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
 				}
@@ -166,7 +166,7 @@ public class NpcDialogLog extends Plugin
 				lastNpcDialog = npcDialog;
 				if (npcDialog.getName() != null)
 				{
-					if(npcDialogLogConfig.displayNpcOverheadText())
+					if (npcDialogLogConfig.displayNpcOverheadText())
 					{
 						setNpcOverheadDialog(npcDialog);
 					}
@@ -201,7 +201,7 @@ public class NpcDialogLog extends Plugin
 					}
 
 					lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
-					if(npcDialogLogConfig.displayPlayerDialog())
+					if (npcDialogLogConfig.displayPlayerDialog())
 					{
 						addDialogMessage(playerDialog.getName(), playerDialog.getText());
 
@@ -239,7 +239,7 @@ public class NpcDialogLog extends Plugin
 				lastMessageTickTime.put(foundActor, client.getTickCount());
 				foundActor.setOverheadText(npcDialog.getText());
 
-				log.debug("Found matching actor: " + foundActor.getName() + " " +foundActor.getId());
+				log.debug("Found matching actor: " + foundActor.getName() + " " + foundActor.getId());
 				log.debug("Set overhead dialog for Npc: " + foundActor.getName() + " to: " + npcDialog.getText());
 			}
 			else
@@ -383,7 +383,7 @@ public class NpcDialogLog extends Plugin
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			//clear all overhead text
-			for ( Actor actor : lastMessageTickTime.keySet())
+			for (Actor actor : lastMessageTickTime.keySet())
 			{
 				actor.setOverheadText(null);
 			}
