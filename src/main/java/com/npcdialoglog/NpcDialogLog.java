@@ -135,7 +135,7 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
-	 * Check if the player has entered dialog with an npc
+	 * Check if the player has entered dialog with a npc
 	 */
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged event)
@@ -152,7 +152,7 @@ public class NpcDialogLog extends Plugin
 	/**
 	 * Checks for the dialog widget and adds a
 	 * message to chat if the dialog
-	 * is from the player or an npc
+	 * is from the player or a npc
 	 */
 	private void checkWidgetDialogs()
 	{
@@ -161,7 +161,7 @@ public class NpcDialogLog extends Plugin
 			final Dialog npcDialog = getWidgetDialogSafely();
 
 			// Check if the NPC has dialog
-			if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))//check if this is a valid dialog box and it is not a duplicate
+			if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))//check if this is a valid dialog box, and it is not a duplicate
 			{
 				lastNpcDialog = npcDialog;
 				if (npcDialog.getName() != null)
@@ -186,8 +186,9 @@ public class NpcDialogLog extends Plugin
 		{
 			final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
 
-			// Check if the player has dialog
-			if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))//check if this is a valid dialog box and it is not a duplicate
+			// Check if the player has dialog and
+			// check if this is a valid dialog box, and it is not a duplicate
+			if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))
 			{
 				lastPlayerDialog = playerDialog;
 				if (playerDialog.getName() != null)
@@ -368,7 +369,8 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Dialog getWidgetDialogSafely(final int group, final int nameChild, final int textChild)
 	{
-		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()), client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
+		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()),
+			client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
 	}
 
 	@Provides
