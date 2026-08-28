@@ -227,7 +227,7 @@ public class NpcDialogLog extends Plugin
 
 			NPC foundActor = null;
 			//look for npc that matches the name in the dialog
-			for (NPC npc : client.getNpcs())
+			for (NPC npc : client.getTopLevelWorldView().npcs())
 			{
 				if (npc.getName() != null && Text.sanitizeMultilineText(npc.getName()).equals(npcDialog.getName()))
 				{
