@@ -14,5 +14,6 @@ This plugin also adds the option to display dialog overhead for immersion 🙂.
 |----------------------|----------------------------------------------|
 | Player Dialog        | Adds dialog said by the player to the chat.  |
 | NPC Dialog           | Adds dialog said by Npcs to the chat.        |
+| Message Box Dialog   | Adds dialog from message boxes without a speaker (objects, items, signs) to the chat. |
 | Player Overhead Text | Displays dialog said by the player overhead. |
 | NPC Overhead Text    | Displays dialog said by Npcs overhead.       |

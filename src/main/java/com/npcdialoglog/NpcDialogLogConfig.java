@@ -50,6 +50,18 @@ public interface NpcDialogLogConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "displayMessageBoxDialog",
+		name = "Message Box Dialog",
+		description = "Add dialog from message boxes without a speaker (objects, items, signs) to chat",
+		section  =  chatDialogSection,
+		position = 2
+	)
+	default boolean displayMessageBoxDialog()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "displayPlayerOverheadText",
 		name = "Player Overhead Text",
 		description = "Add dialog over the head of the player",

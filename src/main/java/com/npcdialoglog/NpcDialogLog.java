@@ -114,6 +114,9 @@ public class NpcDialogLog extends Plugin
 			case DIALOG:
 				onDialogMessage(event);
 				break;
+			case MESBOX:
+				onMessageBoxMessage(event);
+				break;
 			case PUBLICCHAT:
 				//for if the player clears the overhead text themselves by sending a public chat message
 				if (event.getName().equals(client.getLocalPlayer().getName()) && client.getLocalPlayer().getOverheadText() != null)
@@ -202,6 +205,27 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
+	 * Adds dialog from a message box, which has no speaker
+	 */
+	private void onMessageBoxMessage(ChatMessage event)
+	{
+		if (!npcDialogLogConfig.displayMessageBoxDialog())
+		{
+			return;
+		}
+
+		final String text = Text.sanitizeMultilineText(event.getMessage());
+		if (text.isEmpty())
+		{
+			return;
+		}
+
+		addDialogMessage(null, text);
+
+		log.debug("Added message box dialog: " + text);
+	}
+
+	/**
 	 * Sets the overhead dialogue of the npc with the name in {@code Dialog}.
 	 * Defaults to the current npc the player is talking to.
 	 * If the current npc doesn't match the closest match is used.
@@ -256,16 +280,20 @@ public class NpcDialogLog extends Plugin
 	/**
 	 * Adds NPC/Player dialogue to chat as a Console message using the set public chat colors
 	 *
-	 * @param name    the name of the NPC/Player
+	 * @param name    the name of the NPC/Player, or {@code null} for dialog without a speaker
 	 * @param message the message to add to chat
 	 */
 	private void addDialogMessage(String name, String message)
 	{
+		final ChatMessageBuilder chatMessage = new ChatMessageBuilder();
 
-		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
-			.append(getPublicChatUsernameColor(), name)
-			.append(getPublicChatUsernameColor(), ": ")
-			.append(getPublicChatMessageColor(), message);
+		if (name != null)
+		{
+			chatMessage.append(getPublicChatUsernameColor(), name)
+				.append(getPublicChatUsernameColor(), ": ");
+		}
+
+		chatMessage.append(getPublicChatMessageColor(), message);
 
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)
