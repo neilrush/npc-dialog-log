@@ -3,15 +3,25 @@ package com.npcdialoglog;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JTextArea;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -28,7 +38,13 @@ class NpcDialogLogPanel extends PluginPanel
 
 	private static final Color[] ENTRY_COLORS = {ColorScheme.DARKER_GRAY_COLOR, ColorScheme.DARK_GRAY_COLOR};
 
+	private static final int COPIED_POPUP_MS = 750;
+
 	private final JPanel entries = new JPanel();
+
+	private Popup copiedPopup;
+
+	private final Timer copiedPopupTimer = new Timer(COPIED_POPUP_MS, e -> hideCopiedPopup());
 
 	/**
 	 * The entry lines from the same speaker are added to
@@ -39,6 +55,8 @@ class NpcDialogLogPanel extends PluginPanel
 
 	NpcDialogLogPanel()
 	{
+		copiedPopupTimer.setRepeats(false);
+
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -151,6 +169,7 @@ class NpcDialogLogPanel extends PluginPanel
 			nameLabel.setFont(FontManager.getRunescapeBoldFont());
 			nameLabel.setForeground(ColorScheme.BRAND_ORANGE);
 			nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			makeCopyable(nameLabel, name);
 			entry.add(nameLabel);
 		}
 
@@ -168,8 +187,66 @@ class NpcDialogLogPanel extends PluginPanel
 		textArea.setLineWrap(true);
 		textArea.setWrapStyleWord(true);
 		textArea.setEditable(false);
+		textArea.setFocusable(false);
+		textArea.setHighlighter(null);
 		textArea.setBorder(null);
 		textArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+		makeCopyable(textArea, text);
 		return textArea;
+	}
+
+	/**
+	 * Copies the text to the clipboard when the component is clicked
+	 */
+	private void makeCopyable(JComponent component, String text)
+	{
+		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		component.setToolTipText("Click to copy");
+		component.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				if (SwingUtilities.isLeftMouseButton(e))
+				{
+					copyToClipboard(text);
+					showCopiedPopup(component, e.getPoint());
+				}
+			}
+		});
+	}
+
+	private static void copyToClipboard(String text)
+	{
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+	}
+
+	private void showCopiedPopup(Component owner, Point point)
+	{
+		hideCopiedPopup();
+
+		final JLabel label = new JLabel("Copied");
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setForeground(Color.WHITE);
+		label.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		label.setOpaque(true);
+		label.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.BRAND_ORANGE),
+			BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+
+		final Point screen = new Point(point);
+		SwingUtilities.convertPointToScreen(screen, owner);
+		copiedPopup = PopupFactory.getSharedInstance().getPopup(owner, label, screen.x + 10, screen.y + 15);
+		copiedPopup.show();
+		copiedPopupTimer.restart();
+	}
+
+	private void hideCopiedPopup()
+	{
+		if (copiedPopup != null)
+		{
+			copiedPopup.hide();
+			copiedPopup = null;
+		}
 	}
 }

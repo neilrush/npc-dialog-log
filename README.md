@@ -12,7 +12,7 @@ This plugin also adds the option to display dialog overhead for immersion 🙂.
 
 | Option               | Description                                  |
 |----------------------|----------------------------------------------|
-| Dialog Output        | Where logged dialog is shown: the chat box, a side panel, or both. The side panel keeps the last 500 lines of the current session in memory. |
+| Dialog Output        | Where logged dialog is shown: the chat box, a side panel, or both. The side panel keeps the last 500 lines of the current session in memory; click a name or line to copy it. |
 | Player Dialog        | Adds dialog said by the player to the chat.  |
 | NPC Dialog           | Adds dialog said by Npcs to the chat.        |
 | Message Box Dialog   | Adds dialog from message boxes without a speaker (objects, items, signs) to the chat. |
