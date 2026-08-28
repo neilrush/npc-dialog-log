@@ -17,8 +17,7 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.InteractingChanged;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
@@ -184,7 +183,7 @@ public class NpcDialogLog extends Plugin
 
 		if (npcDialogLogConfig.displayPlayerDialog() || npcDialogLogConfig.displayPlayerOverheadText())
 		{
-			final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
+			final Dialog playerDialog = getWidgetDialogSafely(InterfaceID.ChatRight.NAME, InterfaceID.ChatRight.TEXT);
 
 			// Check if the player has dialog and
 			// check if this is a valid dialog box, and it is not a duplicate
@@ -356,21 +355,20 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Dialog getWidgetDialogSafely()
 	{
-		return getWidgetDialogSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
+		return getWidgetDialogSafely(InterfaceID.ChatLeft.NAME, InterfaceID.ChatLeft.TEXT);
 	}
 
 	/**
 	 * Gets sanitized dialog from a dialog widget
 	 *
-	 * @param group     The group id for the dialog widget
-	 * @param nameChild The child id of the name in the dialog widget
-	 * @param textChild The child id of the text/message in the dialog widget
+	 * @param nameComponent The component id of the name in the dialog widget
+	 * @param textComponent The component id of the text/message in the dialog widget
 	 * @return The sanitized dialog from the dialog widget
 	 */
-	private Dialog getWidgetDialogSafely(final int group, final int nameChild, final int textChild)
+	private Dialog getWidgetDialogSafely(final int nameComponent, final int textComponent)
 	{
-		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()),
-			client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
+		return new Dialog(client.getWidget(nameComponent) == null ? null : Text.sanitizeMultilineText(client.getWidget(nameComponent).getText()),
+			client.getWidget(textComponent) == null ? null : Text.sanitizeMultilineText(client.getWidget(textComponent).getText()));
 	}
 
 	@Provides
