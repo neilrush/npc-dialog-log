@@ -75,16 +75,11 @@ public class NpcDialogLog extends Plugin
 	private Dialog lastPlayerDialog = null;
 
 	/**
-	 * check for dialog every game tick
+	 * Expire overhead text every game tick
 	 */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (actorInteractedWith != null)
-		{
-			checkWidgetDialogs();
-		}
-
 		for (Iterator<Actor> iterator = lastMessageTickTime.keySet().iterator(); iterator.hasNext(); )
 		{
 			Actor actor = iterator.next();
@@ -115,20 +110,91 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
-	 * Check if the player has cleared the dialog by sending another message
+	 * Handle dialog messages and the player clearing overhead text by chatting
 	 */
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		//for if the player clears the overhead text themselves by sending a public chat message
-		if (client.getLocalPlayer() != null && event.getType() == ChatMessageType.PUBLICCHAT && event.getName().equals(client.getLocalPlayer().getName()))
+		if (client.getLocalPlayer() == null)
 		{
-			if (client.getLocalPlayer().getOverheadText() != null)
-			{
-				if (lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+			return;
+		}
+
+		switch (event.getType())
+		{
+			case DIALOG:
+				onDialogMessage(event);
+				break;
+			case PUBLICCHAT:
+				//for if the player clears the overhead text themselves by sending a public chat message
+				if (event.getName().equals(client.getLocalPlayer().getName()) && client.getLocalPlayer().getOverheadText() != null)
 				{
-					log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
+					if (lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+					{
+						log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
+					}
 				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	/**
+	 * Adds dialog from a npc or player dialog box, sent as name|text
+	 */
+	private void onDialogMessage(ChatMessage event)
+	{
+		log.debug("DIALOG message: name='{}' sender='{}' message='{}'", event.getName(), event.getSender(), event.getMessage());
+
+		final String raw = event.getMessage();
+		final int separator = raw.indexOf('|');
+		if (separator < 0)
+		{
+			log.debug("DIALOG message without name separator, ignoring");
+			return;
+		}
+
+		final Dialog dialog = new Dialog(
+			Text.sanitizeMultilineText(raw.substring(0, separator)),
+			Text.sanitizeMultilineText(raw.substring(separator + 1)));
+
+		if (dialog.getName().isEmpty() || dialog.getText().isEmpty())
+		{
+			return;
+		}
+
+		final boolean isPlayer = Text.sanitize(dialog.getName()).equals(Text.sanitize(client.getLocalPlayer().getName()));
+
+		if (isPlayer)
+		{
+			if (npcDialogLogConfig.displayPlayerOverheadText())
+			{
+				lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
+				client.getLocalPlayer().setOverheadText(dialog.getText());
+
+				log.debug("Set overhead dialog for player to: " + dialog.getText());
+			}
+
+			if (npcDialogLogConfig.displayPlayerDialog())
+			{
+				addDialogMessage(dialog.getName(), dialog.getText());
+
+				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
+			}
+		}
+		else
+		{
+			if (npcDialogLogConfig.displayNpcOverheadText())
+			{
+				setNpcOverheadDialog(dialog);
+			}
+
+			if (npcDialogLogConfig.displayNpcDialog())
+			{
+				addDialogMessage(dialog.getName(), dialog.getText());
+
+				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
 			}
 		}
 	}
@@ -221,7 +287,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private void setNpcOverheadDialog(Dialog npcDialog)
 	{
-		if (actorInteractedWith.getName() == null || !actorInteractedWith.getName().equals(npcDialog.getName()))
+		if (actorInteractedWith == null || actorInteractedWith.getName() == null || !actorInteractedWith.getName().equals(npcDialog.getName()))
 		{
 
 			NPC foundActor = null;
@@ -242,13 +308,17 @@ public class NpcDialogLog extends Plugin
 				log.debug("Found matching actor: " + foundActor.getName() + " " + foundActor.getId());
 				log.debug("Set overhead dialog for Npc: " + foundActor.getName() + " to: " + npcDialog.getText());
 			}
-			else
+			else if (actorInteractedWith != null)
 			{
 				lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
 				actorInteractedWith.setOverheadText(npcDialog.getText()); //fallback on setting overhead text on interaction npc
 
 				log.debug("Unable to find matching actor. Fallback to using interaction npc: " + actorInteractedWith.getName());
 				log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
+			}
+			else
+			{
+				log.debug("Unable to find matching actor and no interaction npc to fall back on for: " + npcDialog.getName());
 			}
 		}
 		else
