@@ -17,7 +17,6 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.InteractingChanged;
-import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
@@ -63,16 +62,6 @@ public class NpcDialogLog extends Plugin
 	 * The actor that started dialog
 	 */
 	private Actor actorInteractedWith = null;
-
-	/**
-	 * The last dialog from the NPC
-	 */
-	private Dialog lastNpcDialog = null;
-
-	/**
-	 * The last dialog from the player
-	 */
-	private Dialog lastPlayerDialog = null;
 
 	/**
 	 * Expire overhead text every game tick
@@ -200,7 +189,7 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
-	 * Check if the player has entered dialog with a npc
+	 * Remember the npc the player is talking to
 	 */
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged event)
@@ -209,73 +198,7 @@ public class NpcDialogLog extends Plugin
 		{
 			return;
 		}
-		lastNpcDialog = null;
-		lastPlayerDialog = null;
 		actorInteractedWith = event.getTarget();
-	}
-
-	/**
-	 * Checks for the dialog widget and adds a
-	 * message to chat if the dialog
-	 * is from the player or a npc
-	 */
-	private void checkWidgetDialogs()
-	{
-		if (npcDialogLogConfig.displayNpcDialog() || npcDialogLogConfig.displayNpcOverheadText())
-		{
-			final Dialog npcDialog = getWidgetDialogSafely();
-
-			// Check if the NPC has dialog
-			if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))//check if this is a valid dialog box, and it is not a duplicate
-			{
-				lastNpcDialog = npcDialog;
-				if (npcDialog.getName() != null)
-				{
-					if (npcDialogLogConfig.displayNpcOverheadText())
-					{
-						setNpcOverheadDialog(npcDialog);
-					}
-
-					lastPlayerDialog = null; //npc has dialog box now so safe to reset player dialog
-					if (npcDialogLogConfig.displayNpcDialog())
-					{
-						addDialogMessage(npcDialog.getName(), npcDialog.getText());
-
-						log.debug("Added chat dialog: " + npcDialog.getName() + ": " + npcDialog.getText());
-					}
-				}
-			}
-		}
-
-		if (npcDialogLogConfig.displayPlayerDialog() || npcDialogLogConfig.displayPlayerOverheadText())
-		{
-			final Dialog playerDialog = getWidgetDialogSafely(InterfaceID.ChatRight.NAME, InterfaceID.ChatRight.TEXT);
-
-			// Check if the player has dialog and
-			// check if this is a valid dialog box, and it is not a duplicate
-			if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))
-			{
-				lastPlayerDialog = playerDialog;
-				if (playerDialog.getName() != null)
-				{
-					if (client.getLocalPlayer() != null && npcDialogLogConfig.displayPlayerOverheadText())
-					{
-						lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
-						client.getLocalPlayer().setOverheadText(playerDialog.getText());
-
-						log.debug("Set overhead dialog for player to: " + playerDialog.getText());
-					}
-
-					lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
-					if (npcDialogLogConfig.displayPlayerDialog())
-					{
-						addDialogMessage(playerDialog.getName(), playerDialog.getText());
-
-						log.debug("Added chat dialog: " + playerDialog.getName() + ": " + playerDialog.getText());
-					}
-				}
-			}
-		}
 	}
 
 	/**
@@ -416,29 +339,6 @@ public class NpcDialogLog extends Plugin
 			}
 		}
 		return messageColor;
-	}
-
-	/**
-	 * Gets sanitized dialog from npc dialog widget
-	 *
-	 * @return The NPC dialog
-	 */
-	private Dialog getWidgetDialogSafely()
-	{
-		return getWidgetDialogSafely(InterfaceID.ChatLeft.NAME, InterfaceID.ChatLeft.TEXT);
-	}
-
-	/**
-	 * Gets sanitized dialog from a dialog widget
-	 *
-	 * @param nameComponent The component id of the name in the dialog widget
-	 * @param textComponent The component id of the text/message in the dialog widget
-	 * @return The sanitized dialog from the dialog widget
-	 */
-	private Dialog getWidgetDialogSafely(final int nameComponent, final int textComponent)
-	{
-		return new Dialog(client.getWidget(nameComponent) == null ? null : Text.sanitizeMultilineText(client.getWidget(nameComponent).getText()),
-			client.getWidget(textComponent) == null ? null : Text.sanitizeMultilineText(client.getWidget(textComponent).getText()));
 	}
 
 	@Provides
