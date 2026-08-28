@@ -31,7 +31,7 @@ import net.runelite.client.util.Text;
 @Slf4j
 @PluginDescriptor(
 	name = "Npc Dialog Log",
-	description = "Adds dialog between the player and NPCs to the chat as public chat.",
+	description = "Adds dialog from NPCs, the player and message boxes to the chat as public chat.",
 	tags = {"chat, quest, npc"}
 )
 public class NpcDialogLog extends Plugin
