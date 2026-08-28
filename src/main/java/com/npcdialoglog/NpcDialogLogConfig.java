@@ -5,9 +5,11 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 
-@ConfigGroup("npcDialogLog")
+@ConfigGroup(NpcDialogLogConfig.GROUP)
 public interface NpcDialogLogConfig extends Config
 {
+	String GROUP = "npcDialogLog";
+
 	@ConfigSection(
 		name = "Chat Dialog",
 		description = "All options that enable chat dialog logging",
@@ -85,5 +87,16 @@ public interface NpcDialogLogConfig extends Config
 	default boolean displayNpcOverheadText()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "ignoredNpcs",
+		name = "Ignored NPCs",
+		description = "Comma separated list of NPC names whose dialog is not logged or shown overhead. Supports * as a wildcard, e.g. Banker*",
+		position = 2
+	)
+	default String ignoredNpcs()
+	{
+		return "";
 	}
 }

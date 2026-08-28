@@ -2,8 +2,10 @@ package com.npcdialoglog;
 
 import com.google.inject.Provides;
 import java.awt.Color;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +24,13 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ChatColorConfig;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.util.Text;
+import net.runelite.client.util.WildcardMatcher;
 
 @Slf4j
 @PluginDescriptor(
@@ -62,6 +66,41 @@ public class NpcDialogLog extends Plugin
 	 * The actor that started dialog
 	 */
 	private Actor actorInteractedWith = null;
+
+	/**
+	 * The npc names to ignore dialog from
+	 */
+	private List<String> ignoredNpcs = Collections.emptyList();
+
+	@Override
+	protected void startUp()
+	{
+		ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+	}
+
+	/**
+	 * Apply config changes
+	 */
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (event.getGroup().equals(NpcDialogLogConfig.GROUP))
+		{
+			ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+		}
+	}
+
+	private boolean isNpcIgnored(String name)
+	{
+		for (String pattern : ignoredNpcs)
+		{
+			if (WildcardMatcher.matches(pattern, name))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Expire overhead text every game tick
@@ -177,6 +216,12 @@ public class NpcDialogLog extends Plugin
 		}
 		else
 		{
+			if (isNpcIgnored(dialog.getName()))
+			{
+				log.debug("Ignored dialog from: " + dialog.getName());
+				return;
+			}
+
 			if (npcDialogLogConfig.displayNpcOverheadText())
 			{
 				setNpcOverheadDialog(dialog);
