@@ -18,4 +18,6 @@ This plugin also adds the option to display dialog overhead for immersion 🙂.
 | Message Box Dialog   | Adds dialog from message boxes without a speaker (objects, items, signs) to the chat. |
 | Player Overhead Text | Displays dialog said by the player overhead. |
 | NPC Overhead Text    | Displays dialog said by Npcs overhead.       |
+| Player Overhead Color | Color of dialog displayed over the head of the player. |
+| NPC Overhead Color   | Color of dialog displayed over the head of Npcs. |
 | Ignored NPCs         | Comma separated list of NPC names whose dialog is not logged or shown overhead. Supports `*` as a wildcard, e.g. `Banker*`. |

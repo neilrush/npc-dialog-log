@@ -1,5 +1,6 @@
 package com.npcdialoglog;
 
+import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -9,6 +10,11 @@ import net.runelite.client.config.ConfigSection;
 public interface NpcDialogLogConfig extends Config
 {
 	String GROUP = "npcDialogLog";
+
+	/**
+	 * The color the game draws overhead text in
+	 */
+	Color DEFAULT_OVERHEAD_COLOR = Color.YELLOW;
 
 	@ConfigItem(
 		keyName = "dialogOutput",
@@ -98,6 +104,30 @@ public interface NpcDialogLogConfig extends Config
 	default boolean displayNpcOverheadText()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "playerOverheadColor",
+		name = "Player Overhead Color",
+		description = "Color of dialog over the head of the player",
+		section  =  overheadTextSection,
+		position = 2
+	)
+	default Color playerOverheadColor()
+	{
+		return DEFAULT_OVERHEAD_COLOR;
+	}
+
+	@ConfigItem(
+		keyName = "npcOverheadColor",
+		name = "NPC Overhead Color",
+		description = "Color of dialog over the head of npcs",
+		section  =  overheadTextSection,
+		position = 3
+	)
+	default Color npcOverheadColor()
+	{
+		return DEFAULT_OVERHEAD_COLOR;
 	}
 
 	@ConfigItem(

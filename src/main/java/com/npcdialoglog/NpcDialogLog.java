@@ -33,6 +33,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
@@ -263,7 +264,7 @@ public class NpcDialogLog extends Plugin
 			if (npcDialogLogConfig.displayPlayerOverheadText())
 			{
 				lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
-				client.getLocalPlayer().setOverheadText(dialog.getText());
+				client.getLocalPlayer().setOverheadText(overheadText(dialog.getText(), npcDialogLogConfig.playerOverheadColor()));
 
 				log.debug("Set overhead dialog for player to: " + dialog.getText());
 			}
@@ -356,7 +357,7 @@ public class NpcDialogLog extends Plugin
 			if (foundActor != null)
 			{
 				lastMessageTickTime.put(foundActor, client.getTickCount());
-				foundActor.setOverheadText(npcDialog.getText());
+				foundActor.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor()));
 
 				log.debug("Found matching actor: " + foundActor.getName() + " " + foundActor.getId());
 				log.debug("Set overhead dialog for Npc: " + foundActor.getName() + " to: " + npcDialog.getText());
@@ -364,7 +365,7 @@ public class NpcDialogLog extends Plugin
 			else if (actorInteractedWith != null)
 			{
 				lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
-				actorInteractedWith.setOverheadText(npcDialog.getText()); //fallback on setting overhead text on interaction npc
+				actorInteractedWith.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor())); //fallback on setting overhead text on interaction npc
 
 				log.debug("Unable to find matching actor. Fallback to using interaction npc: " + actorInteractedWith.getName());
 				log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
@@ -377,10 +378,22 @@ public class NpcDialogLog extends Plugin
 		else
 		{
 			lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
-			actorInteractedWith.setOverheadText(npcDialog.getText());
+			actorInteractedWith.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor()));
 
 			log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
 		}
+	}
+
+	/**
+	 * Wraps overhead text in a color tag unless it is the default color
+	 */
+	private static String overheadText(String text, Color color)
+	{
+		if (color == null || color.equals(NpcDialogLogConfig.DEFAULT_OVERHEAD_COLOR))
+		{
+			return text;
+		}
+		return ColorUtil.wrapWithColorTag(text, color);
 	}
 
 	/**
