@@ -2,38 +2,46 @@ package com.npcdialoglog;
 
 import com.google.inject.Provides;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
-import net.runelite.api.Varbits;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.InteractingChanged;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ChatColorConfig;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
+import net.runelite.client.util.WildcardMatcher;
 
 @Slf4j
 @PluginDescriptor(
 	name = "Npc Dialog Log",
-	description = "Adds dialog between the player and NPCs to the chat as public chat.",
+	description = "Adds dialog from NPCs, the player and message boxes to the chat as public chat.",
 	tags = {"chat, quest, npc"}
 )
 public class NpcDialogLog extends Plugin
@@ -60,32 +68,108 @@ public class NpcDialogLog extends Plugin
 	@Inject
 	private ChatColorConfig chatColorConfig;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	private NpcDialogLogPanel panel;
+	private NavigationButton navButton;
+
 	/**
 	 * The actor that started dialog
 	 */
 	private Actor actorInteractedWith = null;
 
 	/**
-	 * The last dialog from the NPC
+	 * The npc names to ignore dialog from
 	 */
-	private Dialog lastNpcDialog = null;
+	private List<String> ignoredNpcs = Collections.emptyList();
+
+	@Override
+	protected void startUp()
+	{
+		ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+		updatePanel();
+	}
 
 	/**
-	 * The last dialog from the player
+	 * Apply config changes
 	 */
-	private Dialog lastPlayerDialog = null;
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (event.getGroup().equals(NpcDialogLogConfig.GROUP))
+		{
+			ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+			updatePanel();
+		}
+	}
 
 	/**
-	 * check for dialog every game tick
+	 * Add or remove the side panel to match the config
+	 */
+	private void updatePanel()
+	{
+		final boolean wanted = npcDialogLogConfig.dialogOutput().showsPanel();
+
+		if (wanted && navButton == null)
+		{
+			panel = new NpcDialogLogPanel();
+
+			final BufferedImage icon = ImageUtil.resizeImage(ImageUtil.loadImageResource(getClass(), "icon.png"), 16, 16);
+			navButton = NavigationButton.builder()
+				.tooltip("Npc Dialog Log")
+				.icon(icon)
+				.priority(10)
+				.panel(panel)
+				.build();
+
+			clientToolbar.addNavigation(navButton);
+		}
+		else if (!wanted && navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			panel = null;
+		}
+	}
+
+	/**
+	 * Adds dialog to the chat and/or the side panel
+	 */
+	private void logDialog(String name, String message)
+	{
+		final DialogOutput output = npcDialogLogConfig.dialogOutput();
+
+		if (output.showsChat())
+		{
+			addDialogMessage(name, message);
+		}
+
+		if (output.showsPanel() && panel != null)
+		{
+			final NpcDialogLogPanel target = panel;
+			SwingUtilities.invokeLater(() -> target.addEntry(name, message));
+		}
+	}
+
+	private boolean isNpcIgnored(String name)
+	{
+		for (String pattern : ignoredNpcs)
+		{
+			if (WildcardMatcher.matches(pattern, name))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Expire overhead text every game tick
 	 */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (actorInteractedWith != null)
-		{
-			checkWidgetDialogs();
-		}
-
 		for (Iterator<Actor> iterator = lastMessageTickTime.keySet().iterator(); iterator.hasNext(); )
 		{
 			Actor actor = iterator.next();
@@ -116,26 +200,106 @@ public class NpcDialogLog extends Plugin
 	}
 
 	/**
-	 * Check if the player has cleared the dialog by sending another message
+	 * Handle dialog messages and the player clearing overhead text by chatting
 	 */
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		//for if the player clears the overhead text themselves by sending a public chat message
-		if (client.getLocalPlayer() != null && event.getType() == ChatMessageType.PUBLICCHAT && event.getName().equals(client.getLocalPlayer().getName()))
+		if (client.getLocalPlayer() == null)
 		{
-			if (client.getLocalPlayer().getOverheadText() != null)
-			{
-				if (lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+			return;
+		}
+
+		switch (event.getType())
+		{
+			case DIALOG:
+				onDialogMessage(event);
+				break;
+			case MESBOX:
+				onMessageBoxMessage(event);
+				break;
+			case PUBLICCHAT:
+				//for if the player clears the overhead text themselves by sending a public chat message
+				if (event.getName().equals(client.getLocalPlayer().getName()) && client.getLocalPlayer().getOverheadText() != null)
 				{
-					log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
+					if (lastMessageTickTime.remove(client.getLocalPlayer()) != null)
+					{
+						log.debug("Player sent message while dialog was being displayed. Cleared last dialog time.");
+					}
 				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	/**
+	 * Adds dialog from a npc or player dialog box, sent as name|text
+	 */
+	private void onDialogMessage(ChatMessage event)
+	{
+		log.debug("DIALOG message: name='{}' sender='{}' message='{}'", event.getName(), event.getSender(), event.getMessage());
+
+		final String raw = event.getMessage();
+		final int separator = raw.indexOf('|');
+		if (separator < 0)
+		{
+			log.debug("DIALOG message without name separator, ignoring");
+			return;
+		}
+
+		final Dialog dialog = new Dialog(
+			Text.sanitizeMultilineText(raw.substring(0, separator)),
+			Text.sanitizeMultilineText(raw.substring(separator + 1)));
+
+		if (dialog.getName().isEmpty() || dialog.getText().isEmpty())
+		{
+			return;
+		}
+
+		final boolean isPlayer = Text.sanitize(dialog.getName()).equals(Text.sanitize(client.getLocalPlayer().getName()));
+
+		if (isPlayer)
+		{
+			if (npcDialogLogConfig.displayPlayerOverheadText())
+			{
+				lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
+				client.getLocalPlayer().setOverheadText(overheadText(dialog.getText(), npcDialogLogConfig.playerOverheadColor()));
+
+				log.debug("Set overhead dialog for player to: " + dialog.getText());
+			}
+
+			if (npcDialogLogConfig.displayPlayerDialog())
+			{
+				logDialog(dialog.getName(), dialog.getText());
+
+				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
+			}
+		}
+		else
+		{
+			if (isNpcIgnored(dialog.getName()))
+			{
+				log.debug("Ignored dialog from: " + dialog.getName());
+				return;
+			}
+
+			if (npcDialogLogConfig.displayNpcOverheadText())
+			{
+				setNpcOverheadDialog(dialog);
+			}
+
+			if (npcDialogLogConfig.displayNpcDialog())
+			{
+				logDialog(dialog.getName(), dialog.getText());
+
+				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
 			}
 		}
 	}
 
 	/**
-	 * Check if the player has entered dialog with a npc
+	 * Remember the npc the player is talking to
 	 */
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged event)
@@ -144,73 +308,28 @@ public class NpcDialogLog extends Plugin
 		{
 			return;
 		}
-		lastNpcDialog = null;
-		lastPlayerDialog = null;
 		actorInteractedWith = event.getTarget();
 	}
 
 	/**
-	 * Checks for the dialog widget and adds a
-	 * message to chat if the dialog
-	 * is from the player or a npc
+	 * Adds dialog from a message box, which has no speaker
 	 */
-	private void checkWidgetDialogs()
+	private void onMessageBoxMessage(ChatMessage event)
 	{
-		if (npcDialogLogConfig.displayNpcDialog() || npcDialogLogConfig.displayNpcOverheadText())
+		if (!npcDialogLogConfig.displayMessageBoxDialog())
 		{
-			final Dialog npcDialog = getWidgetDialogSafely();
-
-			// Check if the NPC has dialog
-			if (npcDialog.getText() != null && (lastNpcDialog == null || !lastNpcDialog.getText().equals(npcDialog.getText())))//check if this is a valid dialog box, and it is not a duplicate
-			{
-				lastNpcDialog = npcDialog;
-				if (npcDialog.getName() != null)
-				{
-					if (npcDialogLogConfig.displayNpcOverheadText())
-					{
-						setNpcOverheadDialog(npcDialog);
-					}
-
-					lastPlayerDialog = null; //npc has dialog box now so safe to reset player dialog
-					if (npcDialogLogConfig.displayNpcDialog())
-					{
-						addDialogMessage(npcDialog.getName(), npcDialog.getText());
-
-						log.debug("Added chat dialog: " + npcDialog.getName() + ": " + npcDialog.getText());
-					}
-				}
-			}
+			return;
 		}
 
-		if (npcDialogLogConfig.displayPlayerDialog() || npcDialogLogConfig.displayPlayerOverheadText())
+		final String text = Text.sanitizeMultilineText(event.getMessage());
+		if (text.isEmpty())
 		{
-			final Dialog playerDialog = getWidgetDialogSafely(WidgetID.DIALOG_PLAYER_GROUP_ID, WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());//using the npc children id as they seem to be the same
-
-			// Check if the player has dialog and
-			// check if this is a valid dialog box, and it is not a duplicate
-			if (playerDialog.getText() != null && (lastPlayerDialog == null || !lastPlayerDialog.getText().equals(playerDialog.getText())))
-			{
-				lastPlayerDialog = playerDialog;
-				if (playerDialog.getName() != null)
-				{
-					if (client.getLocalPlayer() != null && npcDialogLogConfig.displayPlayerOverheadText())
-					{
-						lastMessageTickTime.put(client.getLocalPlayer(), client.getTickCount());
-						client.getLocalPlayer().setOverheadText(playerDialog.getText());
-
-						log.debug("Set overhead dialog for player to: " + playerDialog.getText());
-					}
-
-					lastNpcDialog = null; //player has dialog box now so safe reset npc dialog
-					if (npcDialogLogConfig.displayPlayerDialog())
-					{
-						addDialogMessage(playerDialog.getName(), playerDialog.getText());
-
-						log.debug("Added chat dialog: " + playerDialog.getName() + ": " + playerDialog.getText());
-					}
-				}
-			}
+			return;
 		}
+
+		logDialog(null, text);
+
+		log.debug("Added message box dialog: " + text);
 	}
 
 	/**
@@ -222,12 +341,12 @@ public class NpcDialogLog extends Plugin
 	 */
 	private void setNpcOverheadDialog(Dialog npcDialog)
 	{
-		if (actorInteractedWith.getName() == null || !actorInteractedWith.getName().equals(npcDialog.getName()))
+		if (actorInteractedWith == null || actorInteractedWith.getName() == null || !actorInteractedWith.getName().equals(npcDialog.getName()))
 		{
 
 			NPC foundActor = null;
 			//look for npc that matches the name in the dialog
-			for (NPC npc : client.getNpcs())
+			for (NPC npc : client.getTopLevelWorldView().npcs())
 			{
 				if (npc.getName() != null && Text.sanitizeMultilineText(npc.getName()).equals(npcDialog.getName()))
 				{
@@ -238,42 +357,62 @@ public class NpcDialogLog extends Plugin
 			if (foundActor != null)
 			{
 				lastMessageTickTime.put(foundActor, client.getTickCount());
-				foundActor.setOverheadText(npcDialog.getText());
+				foundActor.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor()));
 
 				log.debug("Found matching actor: " + foundActor.getName() + " " + foundActor.getId());
 				log.debug("Set overhead dialog for Npc: " + foundActor.getName() + " to: " + npcDialog.getText());
 			}
-			else
+			else if (actorInteractedWith != null)
 			{
 				lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
-				actorInteractedWith.setOverheadText(npcDialog.getText()); //fallback on setting overhead text on interaction npc
+				actorInteractedWith.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor())); //fallback on setting overhead text on interaction npc
 
 				log.debug("Unable to find matching actor. Fallback to using interaction npc: " + actorInteractedWith.getName());
 				log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
+			}
+			else
+			{
+				log.debug("Unable to find matching actor and no interaction npc to fall back on for: " + npcDialog.getName());
 			}
 		}
 		else
 		{
 			lastMessageTickTime.put(actorInteractedWith, client.getTickCount());
-			actorInteractedWith.setOverheadText(npcDialog.getText());
+			actorInteractedWith.setOverheadText(overheadText(npcDialog.getText(), npcDialogLogConfig.npcOverheadColor()));
 
 			log.debug("Set overhead dialog for Npc: " + actorInteractedWith.getName() + " to: " + npcDialog.getText());
 		}
 	}
 
 	/**
+	 * Wraps overhead text in a color tag unless it is the default color
+	 */
+	private static String overheadText(String text, Color color)
+	{
+		if (color == null || color.equals(NpcDialogLogConfig.DEFAULT_OVERHEAD_COLOR))
+		{
+			return text;
+		}
+		return ColorUtil.wrapWithColorTag(text, color);
+	}
+
+	/**
 	 * Adds NPC/Player dialogue to chat as a Console message using the set public chat colors
 	 *
-	 * @param name    the name of the NPC/Player
+	 * @param name    the name of the NPC/Player, or {@code null} for dialog without a speaker
 	 * @param message the message to add to chat
 	 */
 	private void addDialogMessage(String name, String message)
 	{
+		final ChatMessageBuilder chatMessage = new ChatMessageBuilder();
 
-		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
-			.append(getPublicChatUsernameColor(), name)
-			.append(getPublicChatUsernameColor(), ": ")
-			.append(getPublicChatMessageColor(), message);
+		if (name != null)
+		{
+			chatMessage.append(getPublicChatUsernameColor(), name)
+				.append(getPublicChatUsernameColor(), ": ");
+		}
+
+		chatMessage.append(getPublicChatMessageColor(), message);
 
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)
@@ -290,7 +429,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Color getPublicChatUsernameColor()
 	{
-		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
 		Color usernameColor;
 
 		if (isChatboxTransparent)
@@ -323,7 +462,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Color getPublicChatMessageColor()
 	{
-		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
 		Color messageColor;
 
 
@@ -349,30 +488,6 @@ public class NpcDialogLog extends Plugin
 		return messageColor;
 	}
 
-	/**
-	 * Gets sanitized dialog from npc dialog widget
-	 *
-	 * @return The NPC dialog
-	 */
-	private Dialog getWidgetDialogSafely()
-	{
-		return getWidgetDialogSafely(WidgetInfo.DIALOG_NPC_TEXT.getGroupId(), WidgetInfo.DIALOG_NPC_NAME.getChildId(), WidgetInfo.DIALOG_NPC_TEXT.getChildId());
-	}
-
-	/**
-	 * Gets sanitized dialog from a dialog widget
-	 *
-	 * @param group     The group id for the dialog widget
-	 * @param nameChild The child id of the name in the dialog widget
-	 * @param textChild The child id of the text/message in the dialog widget
-	 * @return The sanitized dialog from the dialog widget
-	 */
-	private Dialog getWidgetDialogSafely(final int group, final int nameChild, final int textChild)
-	{
-		return new Dialog(client.getWidget(group, nameChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, nameChild).getText()),
-			client.getWidget(group, textChild) == null ? null : Text.sanitizeMultilineText(client.getWidget(group, textChild).getText()));
-	}
-
 	@Provides
 	NpcDialogLogConfig provideConfig(ConfigManager configManager)
 	{
@@ -382,6 +497,13 @@ public class NpcDialogLog extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			panel = null;
+		}
+
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			//clear all overhead text
