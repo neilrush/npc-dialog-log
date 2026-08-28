@@ -2,12 +2,14 @@ package com.npcdialoglog;
 
 import com.google.inject.Provides;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
@@ -28,7 +30,10 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
 
@@ -62,6 +67,12 @@ public class NpcDialogLog extends Plugin
 	@Inject
 	private ChatColorConfig chatColorConfig;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	private NpcDialogLogPanel panel;
+	private NavigationButton navButton;
+
 	/**
 	 * The actor that started dialog
 	 */
@@ -76,6 +87,7 @@ public class NpcDialogLog extends Plugin
 	protected void startUp()
 	{
 		ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+		updatePanel();
 	}
 
 	/**
@@ -87,6 +99,55 @@ public class NpcDialogLog extends Plugin
 		if (event.getGroup().equals(NpcDialogLogConfig.GROUP))
 		{
 			ignoredNpcs = Text.fromCSV(npcDialogLogConfig.ignoredNpcs());
+			updatePanel();
+		}
+	}
+
+	/**
+	 * Add or remove the side panel to match the config
+	 */
+	private void updatePanel()
+	{
+		final boolean wanted = npcDialogLogConfig.dialogOutput().showsPanel();
+
+		if (wanted && navButton == null)
+		{
+			panel = new NpcDialogLogPanel();
+
+			final BufferedImage icon = ImageUtil.resizeImage(ImageUtil.loadImageResource(getClass(), "icon.png"), 16, 16);
+			navButton = NavigationButton.builder()
+				.tooltip("Npc Dialog Log")
+				.icon(icon)
+				.priority(10)
+				.panel(panel)
+				.build();
+
+			clientToolbar.addNavigation(navButton);
+		}
+		else if (!wanted && navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			panel = null;
+		}
+	}
+
+	/**
+	 * Adds dialog to the chat and/or the side panel
+	 */
+	private void logDialog(String name, String message)
+	{
+		final DialogOutput output = npcDialogLogConfig.dialogOutput();
+
+		if (output.showsChat())
+		{
+			addDialogMessage(name, message);
+		}
+
+		if (output.showsPanel() && panel != null)
+		{
+			final NpcDialogLogPanel target = panel;
+			SwingUtilities.invokeLater(() -> target.addEntry(name, message));
 		}
 	}
 
@@ -209,7 +270,7 @@ public class NpcDialogLog extends Plugin
 
 			if (npcDialogLogConfig.displayPlayerDialog())
 			{
-				addDialogMessage(dialog.getName(), dialog.getText());
+				logDialog(dialog.getName(), dialog.getText());
 
 				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
 			}
@@ -229,7 +290,7 @@ public class NpcDialogLog extends Plugin
 
 			if (npcDialogLogConfig.displayNpcDialog())
 			{
-				addDialogMessage(dialog.getName(), dialog.getText());
+				logDialog(dialog.getName(), dialog.getText());
 
 				log.debug("Added chat dialog: " + dialog.getName() + ": " + dialog.getText());
 			}
@@ -265,7 +326,7 @@ public class NpcDialogLog extends Plugin
 			return;
 		}
 
-		addDialogMessage(null, text);
+		logDialog(null, text);
 
 		log.debug("Added message box dialog: " + text);
 	}
@@ -423,6 +484,13 @@ public class NpcDialogLog extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			panel = null;
+		}
+
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			//clear all overhead text

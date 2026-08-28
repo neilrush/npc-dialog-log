@@ -10,6 +10,17 @@ public interface NpcDialogLogConfig extends Config
 {
 	String GROUP = "npcDialogLog";
 
+	@ConfigItem(
+		keyName = "dialogOutput",
+		name = "Dialog Output",
+		description = "Where logged dialog is shown: the chat box, the side panel, or both",
+		position = -1
+	)
+	default DialogOutput dialogOutput()
+	{
+		return DialogOutput.CHAT;
+	}
+
 	@ConfigSection(
 		name = "Chat Dialog",
 		description = "All options that enable chat dialog logging",
