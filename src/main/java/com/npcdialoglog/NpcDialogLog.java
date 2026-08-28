@@ -290,7 +290,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Color getPublicChatUsernameColor()
 	{
-		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
 		Color usernameColor;
 
 		if (isChatboxTransparent)
@@ -323,7 +323,7 @@ public class NpcDialogLog extends Plugin
 	 */
 	private Color getPublicChatMessageColor()
 	{
-		boolean isChatboxTransparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		boolean isChatboxTransparent = client.isResized() && client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
 		Color messageColor;
 
 
