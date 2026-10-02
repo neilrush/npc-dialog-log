@@ -22,9 +22,3 @@ jobs:
         run: chmod +x gradlew
       - name: Build with Gradle
         run: ./gradlew build
-      - name: Archive reports
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: reports
-          path: build/reports
